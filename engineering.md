@@ -149,3 +149,5 @@ Areas where a principle has concrete enforcement. Read the linked document befor
 
 - The contract for environment variables lives in code; only the value lives outside.
   → [practices/env.md](practices/env.md)
+- A test is worth writing only when its return beats its maintenance cost.
+  → [practices/test.md](practices/test.md)
