@@ -143,6 +143,39 @@ logger.info("payment.authorized", { requestId, orderId, userId, amount })
 
 A log is not handling. Logging an error and continuing violates #4.
 
+### 10. Every failure must be observable from outside the process
+
+Raising is not the end of it. An exception that dies in a background job, a fire-and-forget call that
+never lands, a nightly run that touches zero rows and exits clean — every line can obey #4 while the
+system fails in silence. Ask it of every failure path: **who finds out, and how?** If the answer needs
+someone to read the code or go digging through logs, nobody finds out.
+
+Swallowing is allowed when continuing is the requirement — a notification failure must not block a
+payment. It is allowed only when the swallow is itself emitted as an event someone will see.
+
+**Doing nothing successfully is not success.** A run that matched nothing, a filter that removed
+everything, a consumer that drained no queue — report it as its own outcome, not as a clean exit.
+
+```ts
+// ✗ fire-and-forget — the failure has nowhere to land
+void notifyApplicationCreated(input)
+
+// ✗ swallowed, and "recorded" where nobody is looking
+try { await notify(input) } catch (e) { console.error(`notify failed: ${e}`) }
+
+// ✓ swallow on purpose, and emit the swallow as an observable event
+const result = await notifySafely(input)
+if (result.status === "failed") {
+  logger.error("notification.failed", { requestId, applicationId, channel: "slack" })
+}
+
+// ✗ a clean exit that did nothing
+await processPending()
+
+// ✓ the empty outcome is a signal of its own
+logger.info("batch.completed", { requestId, processed: count })
+```
+
 ## Practices
 
 Areas where a principle has concrete enforcement. Read the linked document before touching that area.
