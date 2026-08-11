@@ -4,7 +4,7 @@
 
 The contract for environment variables lives in code. The only thing that lives outside code is the value.
 
-How many keys the app reads, what shape each one has, and what happens when one is missing — code must be
+How many keys the app reads, what shape each one has, and what happens when one is missing - code must be
 able to answer all of it. What lives outside code (a deployment dashboard, a local `.env`, a CI secret) is
 **one value per key**, and nothing else.
 
@@ -33,7 +33,7 @@ next person has when deciding whether the key can be deleted.
 
 ### 2. Code reads environment variables only through the registry
 
-Keep raw access — `process.env.X`, `os.environ["X"]` — out of application code. The only exception is
+Keep raw access - `process.env.X`, `os.environ["X"]` - out of application code. The only exception is
 keys the runtime injects on its own (`NODE_ENV` and friends), and that exception list belongs in code too.
 
 Once raw access is allowed, the registry stops being a source of truth and becomes documentation.
@@ -48,7 +48,7 @@ Without it, rule 1 depends on discipline, and discipline is the first thing to g
 This is *Surface failures explicitly* as it applies to environment variables.
 
 A fallback means the app runs without the key, which contradicts calling it required. When the key is
-missing the app does not fail — it **quietly points at the wrong target.** Script entry points that skip
+missing the app does not fail - it **quietly points at the wrong target.** Script entry points that skip
 the boot check are where this hurts most.
 
 > Real incident: `DATABASE_URL ?? "postgresql://localhost..."` kept the app running against a local
@@ -71,7 +71,7 @@ Check every registered key before the process accepts its first request.
 
 Read a key at the moment the feature needs it and the failure surfaces **after the user has already
 paid.** The boot check moves that failure to just after deploy. Validating optional keys serves the same
-end — a typo'd webhook URL gets caught at boot instead of when an alert is needed.
+end - a typo'd webhook URL gets caught at boot instead of when an alert is needed.
 
 Report **every** problem key at once. One at a time turns into one redeploy per key.
 

@@ -6,13 +6,13 @@ Write a test only when its return beats its maintenance cost.
 
 Every test is bought twice: once when it is written, and again every time the implementation moves
 underneath it. **AI drove the first price to nearly zero and left the second untouched.** That is why
-agent-written suites grow fast and then start dragging — the cheap half got cheaper, the expensive
+agent-written suites grow fast and then start dragging - the cheap half got cheaper, the expensive
 half did not.
 
 Two questions decide whether a test is worth having. Both have answers.
 
-- **Return** — if a plausible bug were introduced, would this test fail?
-- **Cost** — if the implementation changed without changing behavior, would this test fail?
+- **Return** - if a plausible bug were introduced, would this test fail?
+- **Cost** - if the implementation changed without changing behavior, would this test fail?
 
 The second is *resistance to refactoring*. A test that answers **no** to the first and **yes** to the
 second is pure liability: it catches nothing and bills you on every change. Delete it.
@@ -24,7 +24,7 @@ The problem was never the number of tests. It is that nobody priced them.
 ### 1. The expected answer comes from outside the code
 
 Decide what the result should be before looking at how it is produced. A test written by reading the
-implementation records what the code *does*, bugs included — the defect is now in two files, and the
+implementation records what the code *does*, bugs included - the defect is now in two files, and the
 test can only obstruct the next refactor.
 
 The harder half: **the correct answer is usually not in the code at all.** Common-sense flows can be
@@ -33,7 +33,7 @@ inferred; product rules cannot. "Only paid members can favorite." "The limit is 
 source will write a suite that looks complete and quietly misses the rules nobody wrote down.
 
 > Real case: a screen was described as "premium members only." Tests written from the code checked that
-> free members are blocked — and passed. The actual policy also had suspended and expired members. A
+> free members are blocked - and passed. The actual policy also had suspended and expired members. A
 > bug that let them through survived the whole suite.
 
 **Have the agent ask instead of answer.** Do not commission tests; commission questions.
@@ -63,7 +63,7 @@ mockBrowser()   // platform and browser APIs
 ```
 
 - Raw `vi.mock` / `vi.fn` / `unittest.mock` in a test file is a lint error. Sanctioned helpers only.
-- Declare directories that are never mocked — repositories, services, hooks, queries, models.
+- Declare directories that are never mocked - repositories, services, hooks, queries, models.
   These are exactly what refactoring moves.
 - **Name the helper after the thing being faked, not the call being faked.** `mockFetchCard()` hides
   what boundary is being crossed; `server.respond(cardResponse)` makes it obvious the subject is an
@@ -78,7 +78,7 @@ result. Extract it, test it directly, and let one end-to-end path cover the thin
 
 Sometimes the answer is worse: **the thing cannot be verified here at all.**
 
-> Real case: a client-side check compared a balance against a top-up limit — but the balance lives in
+> Real case: a client-side check compared a balance against a top-up limit - but the balance lives in
 > another system and the client never sees it. Mocks filled the gap, the test passed, and the passing
 > test hid the fact that the rule could not be enforced at that layer.
 
@@ -98,7 +98,7 @@ would state the outcome.
 
 ### 5. Put tests on stable boundaries
 
-Exported module functions, HTTP handlers, CLI entry points — surfaces other code already depends on.
+Exported module functions, HTTP handlers, CLI entry points - surfaces other code already depends on.
 Internal helpers get exercised through those, not directly.
 
 A test aimed at a private helper is a promise never to rename it. If a helper must be exported so a
@@ -106,7 +106,7 @@ test can reach it, the test is on the wrong boundary.
 
 ### 6. Spend where the return is high
 
-High return, stable shape — worth the maintenance:
+High return, stable shape - worth the maintenance:
 
 - calculations and policy: refund amounts, pricing, eligibility
 - state transitions, including the moves that must be rejected
@@ -114,7 +114,7 @@ High return, stable shape — worth the maintenance:
 - relationships that must hold between two places (→ [env.md](env.md))
 - authentication and permission boundaries
 
-Low return, volatile shape — one end-to-end path per user-visible flow is enough:
+Low return, volatile shape - one end-to-end path per user-visible flow is enough:
 
 - glue that only delegates
 - layout and presentational structure
@@ -128,7 +128,7 @@ twenty samples would not.
 
 ### 8. Prove the return: plant the bug the test claims to catch
 
-A passing test says nothing about whether it defends anything. Coverage says less — it reports which
+A passing test says nothing about whether it defends anything. Coverage says less - it reports which
 lines ran, not which bugs would be caught.
 
 Before trusting a test, break the code on purpose:
@@ -141,13 +141,13 @@ Before trusting a test, break the code on purpose:
 Predicting first is the whole trick. Asked *afterwards* why a planted bug survived, an agent will
 produce a fluent explanation for either outcome. Committed in advance, the question has one answer.
 
-Plant bugs that look like bugs a person would actually ship — a moved boundary, a dropped policy
+Plant bugs that look like bugs a person would actually ship - a moved boundary, a dropped policy
 condition, a failure response handled as success. Not `0 → 1`, not a renamed variable, not something
 that fails to compile. Change only code the tests actually reach, and only in ways an outside observer
 could notice.
 
 Three to five realistic mutations beat a tool generating thousands. If the predicted test passes, the
-test is thin. When it is ambiguous, call it thin — that is the cheaper mistake.
+test is thin. When it is ambiguous, call it thin - that is the cheaper mistake.
 
 ### 9. Never edit a test to make it pass
 
@@ -183,7 +183,7 @@ Contracts are fixed; the means follow the stack. Use the test runner the project
 A test that survives a refactor, in TypeScript with vitest:
 
 ```ts
-// the subject takes values and returns a decision — nothing to mock
+// the subject takes values and returns a decision - nothing to mock
 it("suggests a full refund at exactly 7 days before start", () => {
   expect(suggestRefundAmountWon(startsAt, 129_000, daysBefore(7))).toBe(129_000)
 })

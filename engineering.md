@@ -54,7 +54,7 @@ of failure. Add a fallback only when that behavior is itself a requirement, neve
 // ✗ covers the failure with an empty value
 try { return JSON.parse(raw) } catch { return {} }
 
-// ✗ covers a missing required value — when the key is absent this silently points at a local database
+// ✗ covers a missing required value - when the key is absent this silently points at a local database
 const url = process.env.DATABASE_URL ?? "postgresql://localhost:5432/dev"
 
 // ✓ both raise where the failure happens
@@ -117,7 +117,7 @@ const sessions = new Map<string, Session>()
 await db.insert(sessionsTable).values(session)
 ```
 
-This does not conflict with #3. You may cut **scope** — ship the list now, add the detail later.
+This does not conflict with #3. You may cut **scope** - ship the list now, add the detail later.
 You may not lay a **foundation** you already plan to throw away.
 
 ### 9. Log for the questions you will have to answer later
@@ -127,11 +127,11 @@ rather than as a sentence, and make it possible to tie back to the request it ca
 people by identifier, never by content.
 
 ```ts
-// ✗ unleveled breadcrumbs — they pile up in production and answer no question
+// ✗ unleveled breadcrumbs - they pile up in production and answer no question
 console.log("payment started")
 console.log("got here", result)
 
-// ✗ an interpolated sentence — unsearchable, unaggregatable, and it keeps PII and secrets
+// ✗ an interpolated sentence - unsearchable, unaggregatable, and it keeps PII and secrets
 console.log(`user ${user.email} paid ${amount} with ${card.number}`)
 
 // ✓ keep the trace, but drop the level
@@ -146,18 +146,18 @@ A log is not handling. Logging an error and continuing violates #4.
 ### 10. Every failure must be observable from outside the process
 
 Raising is not the end of it. An exception that dies in a background job, a fire-and-forget call that
-never lands, a nightly run that touches zero rows and exits clean — every line can obey #4 while the
+never lands, a nightly run that touches zero rows and exits clean - every line can obey #4 while the
 system fails in silence. Ask it of every failure path: **who finds out, and how?** If the answer needs
 someone to read the code or go digging through logs, nobody finds out.
 
-Swallowing is allowed when continuing is the requirement — a notification failure must not block a
+Swallowing is allowed when continuing is the requirement - a notification failure must not block a
 payment. It is allowed only when the swallow is itself emitted as an event someone will see.
 
 **Doing nothing successfully is not success.** A run that matched nothing, a filter that removed
-everything, a consumer that drained no queue — report it as its own outcome, not as a clean exit.
+everything, a consumer that drained no queue - report it as its own outcome, not as a clean exit.
 
 ```ts
-// ✗ fire-and-forget — the failure has nowhere to land
+// ✗ fire-and-forget - the failure has nowhere to land
 void notifyApplicationCreated(input)
 
 // ✗ swallowed, and "recorded" where nobody is looking
@@ -174,6 +174,40 @@ await processPending()
 
 // ✓ the empty outcome is a signal of its own
 logger.info("batch.completed", { requestId, processed: count })
+```
+
+### 11. Assume every operation runs twice
+
+A retry is not a risk you guard against, it is a certainty you design for.
+A dropped response, a double-clicked button, a rerun job, a setup script executed on a machine that is
+already set up: the second run is coming. Decide now what it does.
+
+When the same input arrives again with no new intent behind it, the state must converge. Where
+converging is impossible because the effect leaves the system, money moving or a message sending, the
+caller supplies a key that makes the duplicate recognizable, and the second attempt returns the first
+result instead of doing the work again.
+
+This is not a licence to deduplicate everything. Two orders a person deliberately placed are two
+orders. The test is whether the repeat carries a new decision.
+
+```ts
+// ✗ a second run appends a duplicate
+await fs.appendFile(configPath, block)
+
+// ✓ a second run converges on the same file
+await writeManagedBlock(configPath, MARKER, block)
+
+// ✗ a retried webhook charges the card again
+await chargeCard(order.amountWon)
+
+// ✓ the key makes the repeat recognizable, and the second call returns the first result
+await chargeCard(order.amountWon, { idempotencyKey: order.id })
+
+// ✗ only works against a clean database
+await db.insert(members).values(row)
+
+// ✓ converges from any starting state
+await db.insert(members).values(row).onConflictDoNothing()
 ```
 
 ## Practices
