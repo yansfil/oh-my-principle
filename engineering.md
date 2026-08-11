@@ -210,6 +210,21 @@ await db.insert(members).values(row)
 await db.insert(members).values(row).onConflictDoNothing()
 ```
 
+### 12. Price a test before writing it
+
+Get the expected answer from outside the code, not from the implementation you just wrote. Assert what
+a caller observes, and mock only across boundaries you cannot change. A test that catches no plausible
+bug but breaks on every refactor is a liability.
+
+```ts
+// ✗ asserts wiring, and mocks code you own
+vi.mock("@/db/repository")
+expect(repo.save).toHaveBeenCalledWith(order)
+
+// ✓ asserts the outcome, nothing to mock
+expect(suggestRefundAmountWon(startsAt, 129_000, daysBefore(7))).toBe(129_000)
+```
+
 ## Practices
 
 Areas where a principle has concrete enforcement. Read the linked document before touching that area.
