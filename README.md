@@ -8,6 +8,8 @@ Engineering principles applied across projects, written to be read by coding age
 - **[practices/](practices/)** - areas where a principle has concrete enforcement. Read on demand.
   - [env.md](practices/env.md) - environment variables
   - [test.md](practices/test.md) - testing
+- **[INSTALL.md](INSTALL.md)** - wiring the principles into an agent so they arrive on their own.
+- **[hooks/](hooks/)** - the injection script the install uses.
 
 ## The split
 
