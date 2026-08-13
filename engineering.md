@@ -225,6 +225,33 @@ expect(repo.save).toHaveBeenCalledWith(order)
 expect(suggestRefundAmountWon(startsAt, 129_000, daysBefore(7))).toBe(129_000)
 ```
 
+### 13. Fix the class of failure, not the instance
+
+A patch should resolve the category of problem behind a failure, not just the exact case you last
+observed. If the same decision needs a second string match, exception branch, magic threshold, or
+timing delay, stop before adding it. That second heuristic is a signal, not a green light: the
+current solution is overfitting to what you happened to see.
+
+Before adding it, name the state you are actually trying to detect, find the most reliable source
+of truth for that state, and check whether the input can be modeled structurally instead of matched
+as text. A heuristic is fine at a boundary you do not control, an external CLI, a log stream, a TUI,
+but it should stay isolated, explain why its constants are what they are, and be replaceable once a
+better signal exists. It should never quietly become the domain model.
+
+```ts
+// ✗ each new failure adds another string, another threshold, no model of the actual state
+if (transcript.includes("please answer")) return "waiting"
+if (transcript.slice(-240).includes("please answer")) return "waiting"
+if (lastInput.length <= 60 && prevBlock.includes("please answer")) return "waiting"
+
+// ✓ the real question is the agent's state; text matching is an isolated fallback for it
+type AgentState = "WaitingForUser" | "Running" | "Idle" | "Unknown"
+
+function agentState(session: Session): AgentState {
+  return session.lifecycleEvent ?? inferFromTranscript(session.transcript) // fallback, documented
+}
+```
+
 ## Practices
 
 Areas where a principle has concrete enforcement. Read the linked document before touching that area.
