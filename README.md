@@ -4,21 +4,15 @@ Engineering principles applied across projects, written to be read by coding age
 
 ## Contents
 
-- **[engineering.md](engineering.md)** - the engineering principles. Short, absolute, meant to sit in context at all times.
-- **[design.md](design.md)** - the design principles for screens where a user performs work. Indexed in every session; read in full before UI work.
-- **[practices/](practices/)** - areas where a principle has concrete enforcement. Read on demand.
-  - [env.md](practices/env.md) - environment variables
-  - [test.md](practices/test.md) - testing
+- **[ROOT.md](ROOT.md)** - governs the system itself: the layers, the entry bar, the domain table, precedence. Start here.
+- **[engineering/](engineering/)** - the engineering domain: [principles.md](engineering/principles.md) plus [practices/](engineering/practices/) (env, test).
+- **[design/](design/)** - the design domain for screens where a user performs work: [principles.md](design/principles.md).
 - **[INSTALL.md](INSTALL.md)** - wiring the principles into an agent so they arrive on their own.
-- **[hooks/](hooks/)** - the injection script the install uses.
+- **[hooks/](hooks/)** - the injection script the install uses. It reads ROOT.md's domain table and each domain's rule titles.
 
 ## The split
 
-A **principle** is a call an agent gets wrong by default. It is stated as a rule with no rationale
-attached, because a rationale is something to negotiate against, and a violation of it is visible.
-
-A **practice** is a principle that has grown a mechanism - a registry, a contract test, a boot check.
-It carries its reasoning, because moving it to another stack means rebuilding the mechanism, and you
-cannot rebuild what you do not understand the purpose of.
-
-Nothing goes in the root document unless an agent would do the opposite without it.
+The layer definitions (principle / practice / reference), the entry bar, and the precedence rules
+live in [ROOT.md](ROOT.md), which governs the system itself. In one line: a principle is a call an
+agent gets wrong by default, and nothing enters a principles document unless the agent would do the
+opposite without it.

@@ -5,7 +5,7 @@ waiting to be read.
 
 ## What it does
 
-`hooks/inject-principles.sh` reads `engineering.md` and emits the rule list as hook
+`hooks/inject-principles.sh` reads `ROOT.md`'s domain table and each domain's `principles.md`, and emits the rule titles as hook
 output. Two events run it.
 
 | Event | Why |
@@ -16,7 +16,7 @@ output. Two events run it.
 Only the rule sentences and the practice index are injected, roughly 350 tokens.
 The examples and the violation signals stay in the files and are read on demand.
 
-The script re-reads `engineering.md` on every run, so adding a principle changes
+The script re-reads `ROOT.md` and the domain documents on every run, so adding a domain or a principle changes
 what gets injected with no further edits.
 
 ## Requirements
@@ -129,15 +129,15 @@ is worth opening, add a pointer to the always-loaded instruction file
 ```markdown
 ## Engineering Principles
 
-Engineering work follows `~/projects/oh-my-principle/engineering.md`.
-Read it before proposing an architecture, adding a dependency, designing an error path,
-or writing anything that can run twice.
-`practices/env.md` and `practices/test.md` carry the enforcement detail; read the relevant
-one before touching environment variables or tests.
+Work follows the principle system at `~/projects/oh-my-principle/ROOT.md`.
+Its domain table says which document to read before which kind of work
+(engineering, design, and whatever domains exist by then).
+Each domain's `practices/` carries the enforcement detail; read the relevant
+one before touching that area.
 ```
 
 Do not paste the eleven rules into that file. A second copy drifts from the first, which
-is the failure `practices/env.md` exists to prevent.
+is the failure `engineering/practices/env.md` exists to prevent.
 
 ## Verify
 
@@ -146,7 +146,7 @@ list the eleven without opening a file.
 
 For the subagent path, have it dispatch a subagent and ask the same question there.
 
-If nothing arrives, run the script by hand. A missing `engineering.md` reports itself
+If nothing arrives, run the script by hand. A missing `ROOT.md` or domain document reports itself
 through `systemMessage` rather than failing quietly, so check the session for that
 message first.
 

@@ -1,14 +1,15 @@
 #!/bin/bash
 #
-# Injects the engineering principles into an agent session.
+# Injects the principle system into an agent session.
 #
 # Wired to SessionStart and SubagentStart. Subagents do not inherit the parent
 # thread's context, so without the SubagentStart entry the agent that actually
 # writes the code runs without the principles.
 #
-# The rule list is read out of engineering.md on every run rather than kept as a
-# copy here. Adding a principle changes what gets injected with no edit to this
-# script and no second file to keep in sync.
+# ROOT.md's domain table is the single source for which domains exist and when
+# each applies; this script parses it rather than keeping a copy. Each domain's
+# rule titles are read out of its principles.md on every run. Adding a domain or
+# a principle changes what gets injected with no edit to this script.
 #
 # Usage: inject-principles.sh <EventName>
 #
@@ -18,60 +19,73 @@ EVENT="${1:-SessionStart}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
-DOC="$REPO_ROOT/engineering.md"
+ROOT_DOC="$REPO_ROOT/ROOT.md"
 
-# A missing document means the whole mechanism is dead. Say so rather than
-# exiting quietly, or the principles stop being injected and nobody notices.
-if [ ! -f "$DOC" ]; then
-  jq -n --arg doc "$DOC" \
-    '{systemMessage: ("Engineering principles not injected: " + $doc + " is missing")}'
+# A missing root means the whole mechanism is dead. Say so rather than exiting
+# quietly, or the principles stop being injected and nobody notices.
+if [ ! -f "$ROOT_DOC" ]; then
+  jq -n --arg doc "$ROOT_DOC" \
+    '{systemMessage: ("Principles not injected: " + $doc + " is missing")}'
   exit 0
 fi
 
-RULES=$(grep '^### ' "$DOC" | sed 's/^### //')
+# Parse the domain table: | name | trigger | path | (skip header and divider).
+BODY=""
+MISSING=""
+while IFS='|' read -r _ name trigger path _; do
+  name="$(echo "$name" | sed 's/^ *//;s/ *$//')"
+  trigger="$(echo "$trigger" | sed 's/^ *//;s/ *$//')"
+  path="$(echo "$path" | sed 's/^ *//;s/ *$//')"
+  if [ -z "$name" ] || [ "$name" = "Domain" ] || [ "${name#---}" != "$name" ]; then
+    continue
+  fi
+  doc="$REPO_ROOT/$path"
+  if [ ! -f "$doc" ]; then
+    MISSING="$MISSING $path"
+    continue
+  fi
+  titles="$(grep '^### ' "$doc" | sed 's/^### /  - /')"
+  BODY="$BODY## $name - read $doc in full when $trigger
+$titles
 
-# Practice links are relative to the repository. Rewrite them to absolute paths
-# so the agent can open them without guessing where the repository lives.
-PRACTICES=$(
-  awk '/^## Practices/{f=1;next} f' "$DOC" |
-    sed '/^[[:space:]]*$/d' |
-    sed "s|→ \[[^]]*\](\([^)]*\))|-> $REPO_ROOT/\1|"
-)
+"
+done < <(awk '/^\| Domain /{f=1;next} f && /^\|/{print} f && !/^\|/{f=0}' "$ROOT_DOC")
 
-# Other domain documents in the repository root are indexed with one line each,
-# not injected in full. The rule bodies load only when the agent enters that
-# domain, which keeps the always-on cost flat as domains are added.
-DOMAINS=$(
-  for f in "$REPO_ROOT"/*.md; do
-    base="$(basename "$f")"
-    # bash 3.2 (macOS default) cannot parse `case` inside command substitution
-    if [ "$base" = "engineering.md" ] || [ "$base" = "README.md" ] || [ "$base" = "INSTALL.md" ]; then
-      continue
-    fi
-    title="$(grep -m1 '^# ' "$f" | sed 's/^# //')"
-    printf -- "- %s apply to their domain with the same force. Read %s before starting work in that domain.\n" "$title" "$f"
-  done
-)
+# Practice links inside a principles.md are relative to its domain folder.
+# Surface the engineering practice index the way the old script did, with
+# absolute paths so the agent can open them without guessing.
+ENG_DOC="$REPO_ROOT/engineering/principles.md"
+PRACTICES=""
+if [ -f "$ENG_DOC" ]; then
+  PRACTICES=$(
+    awk '/^## Practices/{f=1;next} f' "$ENG_DOC" |
+      sed '/^[[:space:]]*$/d' |
+      sed "s|→ \[[^]]*\](\([^)]*\))|-> $REPO_ROOT/engineering/\1|"
+  )
+fi
+
+SYSMSG=""
+if [ -n "$MISSING" ]; then
+  SYSMSG="Principle domains listed in ROOT.md but missing on disk:$MISSING"
+fi
 
 jq -n \
   --arg event "$EVENT" \
-  --arg rules "$RULES" \
+  --arg body "$BODY" \
   --arg practices "$PRACTICES" \
-  --arg domains "$DOMAINS" \
-  --arg doc "$DOC" \
+  --arg root "$ROOT_DOC" \
+  --arg sysmsg "$SYSMSG" \
   '{
     suppressOutput: true,
     hookSpecificOutput: {
       hookEventName: $event,
       additionalContext: (
-        "Engineering principles in force. These override your default behavior.\n\n" +
-        $rules + "\n\n" +
-        $practices + "\n\n" +
-        (if $domains == "" then "" else $domains + "\n\n" end) +
-        "Before writing or changing code, check the change against these rules. " +
-        "When one is in play, name it and say how the change satisfies it. " +
-        "Read " + $doc + " for the examples and the violation signals before " +
-        "proposing an architecture or choosing a dependency."
+        "Principles in force. These override your default behavior. Rule titles are listed here; read the named document in full before working in its domain.\n\n" +
+        $body +
+        (if $practices == "" then "" else $practices + "\n\n" end) +
+        "When a rule is in play, name it and say how the change satisfies it. " +
+        "Project-local instructions override these principles; when one wins, name the principle it overrides. " +
+        "The system itself is defined in " + $root + "."
       )
     }
-  }'
+  } + (if $sysmsg == "" then {} else {systemMessage: $sysmsg} end)'
