@@ -4,7 +4,8 @@ Engineering principles applied across projects, written to be read by coding age
 
 ## Contents
 
-- **[engineering.md](engineering.md)** - the principles. Short, absolute, meant to sit in context at all times.
+- **[engineering.md](engineering.md)** - the engineering principles. Short, absolute, meant to sit in context at all times.
+- **[design.md](design.md)** - the design principles for screens where a user performs work. Indexed in every session; read in full before UI work.
 - **[practices/](practices/)** - areas where a principle has concrete enforcement. Read on demand.
   - [env.md](practices/env.md) - environment variables
   - [test.md](practices/test.md) - testing
