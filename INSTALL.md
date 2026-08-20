@@ -117,8 +117,9 @@ Append to the arrays if the events are already present.
 
 Codex asks for trust on a hook it has not seen before and records the approval as a
 `trusted_hash` under `[hooks.state]` in `~/.codex/config.toml`. Approve it on the next
-run, or the hook is registered but never executes. Editing the script changes the hash
-and asks again.
+run, or the hook is registered but never executes. **Editing `inject-principles.sh` changes the
+hash and asks again**, so a `git pull` here means the next Codex session prompts for trust and
+injects nothing until it is granted.
 
 ### Agent instruction file
 
@@ -136,22 +137,38 @@ Each domain's `practices/` carries the enforcement detail; read the relevant
 one before touching that area.
 ```
 
-Do not paste the eleven rules into that file. A second copy drifts from the first, which
+Do not paste the rules into that file. A second copy drifts from the first, which
 is the failure `engineering/practices/env.md` exists to prevent.
+
+### The `principle` skill
+
+Adding and reviewing principles is itself a flow this repository ships. Link it in so it is
+invocable as `/principle`; it reads `ROOT.md` at run time, so it never carries a copy of the contract.
+
+```bash
+ln -sfn ~/projects/oh-my-principle/skills/principle ~/.claude/skills/principle
+ln -sfn ~/projects/oh-my-principle/skills/principle ~/.codex/skills/principle
+```
+
+Link the **directory**, not the `SKILL.md` inside it. Codex omits a symlinked `SKILL.md` from the
+list the model sees, but a symlinked skill directory containing a real `SKILL.md` is listed
+normally - verified with `codex debug prompt-input`. Linking the directory keeps one copy of the
+skill; copying it into each runtime is the drift `engineering/practices/env.md` exists to prevent.
 
 ## Verify
 
-Start a new session and ask the agent what engineering principles are in force. It should
-list the eleven without opening a file.
+Start a new session and ask the agent what principles are in force. It should list every
+domain's rules without opening a file.
 
 For the subagent path, have it dispatch a subagent and ask the same question there.
 
-If nothing arrives, run the script by hand. A missing `ROOT.md` or domain document reports itself
-through `systemMessage` rather than failing quietly, so check the session for that
-message first.
+If nothing arrives, run the script by hand. Every departure from `ROOT.md`'s `## The contract` -
+a missing document, an empty table cell, no table at all - reports itself through `systemMessage`
+rather than failing quietly, so check the session for that message first.
 
 ## Uninstall
 
-Remove the entries from `~/.claude/settings.json` and `~/.codex/hooks.json`.
+Remove the entries from `~/.claude/settings.json` and `~/.codex/hooks.json`, and the
+`~/.claude/skills/principle` link if it was created.
 Nothing else is written outside the repository, and Codex's recorded trust hashes become
 inert once the entries are gone.

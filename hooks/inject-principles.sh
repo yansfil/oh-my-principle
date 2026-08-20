@@ -11,6 +11,11 @@
 # rule titles are read out of its principles.md on every run. Adding a domain or
 # a principle changes what gets injected with no edit to this script.
 #
+# ROOT.md's "## The contract" section fixes the table's shape. Every departure
+# from it is reported through systemMessage and none is skipped past: a domain
+# that vanishes quietly takes its rules out of every session with nobody
+# noticing (engineering principle 10).
+#
 # Usage: inject-principles.sh <EventName>
 #
 set -euo pipefail
@@ -31,7 +36,8 @@ fi
 
 # Parse the domain table: | name | trigger | path | (skip header and divider).
 BODY=""
-MISSING=""
+PROBLEMS=""
+ROWS=0
 while IFS='|' read -r _ name trigger path _; do
   name="$(echo "$name" | sed 's/^ *//;s/ *$//')"
   trigger="$(echo "$trigger" | sed 's/^ *//;s/ *$//')"
@@ -39,17 +45,39 @@ while IFS='|' read -r _ name trigger path _; do
   if [ -z "$name" ] || [ "$name" = "Domain" ] || [ "${name#---}" != "$name" ]; then
     continue
   fi
+  ROWS=$((ROWS + 1))
+  # An empty cell is an error, not an omission. Injecting the row anyway ships a
+  # truncated trigger sentence to the agent; skipping it drops the domain in
+  # silence. Both are worse than saying so.
+  if [ -z "$trigger" ]; then
+    PROBLEMS="$PROBLEMS; domain \"$name\" has an empty \"Read when\" cell"
+    continue
+  fi
+  if [ -z "$path" ]; then
+    PROBLEMS="$PROBLEMS; domain \"$name\" has an empty document cell"
+    continue
+  fi
   doc="$REPO_ROOT/$path"
   if [ ! -f "$doc" ]; then
-    MISSING="$MISSING $path"
+    PROBLEMS="$PROBLEMS; domain \"$name\" points at a missing document: $path"
     continue
   fi
   titles="$(grep '^### ' "$doc" | sed 's/^### /  - /')"
+  if [ -z "$titles" ]; then
+    PROBLEMS="$PROBLEMS; domain \"$name\" has no \"### \" rule headings: $path"
+    continue
+  fi
   BODY="$BODY## $name - read $doc in full when $trigger
 $titles
 
 "
 done < <(awk '/^\| Domain /{f=1;next} f && /^\|/{print} f && !/^\|/{f=0}' "$ROOT_DOC")
+
+# No table at all means nothing is injected. Exiting clean here is the failure
+# that hides every other one: the session looks normal with zero rules loaded.
+if [ "$ROWS" -eq 0 ]; then
+  PROBLEMS="$PROBLEMS; no domain table found (a markdown table with a \"Domain\" header column)"
+fi
 
 # Practice links inside a principles.md are relative to its domain folder.
 # Surface the engineering practice index the way the old script did, with
@@ -65,8 +93,8 @@ if [ -f "$ENG_DOC" ]; then
 fi
 
 SYSMSG=""
-if [ -n "$MISSING" ]; then
-  SYSMSG="Principle domains listed in ROOT.md but missing on disk:$MISSING"
+if [ -n "$PROBLEMS" ]; then
+  SYSMSG="$ROOT_DOC violates its own contract${PROBLEMS}. Affected domains were not injected."
 fi
 
 jq -n \
