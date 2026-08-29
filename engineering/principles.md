@@ -80,9 +80,11 @@ function calculateRefund(req: NextRequest) { ... }
 function calculateRefund(order: Order, canceledAt: Date) { ... }
 ```
 
-### 6. Prefer established, well-maintained libraries when they reduce overall complexity or improve reliability
+### 6. Search for an established solution before designing your own - adopt it as a library when one fits, as a design reference when it does not
 
-Do not reimplement common functionality without a clear reason.
+Do not reimplement common functionality without a clear reason, and do not invent a model for a
+solved problem without reading how proven implementations model it. The bound stays: adopt only
+what reduces overall complexity or improves reliability.
 
 ```ts
 // ✗ hand-rolls time zones, leap years, and DST
@@ -91,6 +93,12 @@ const kst = new Date(Date.UTC(y, m - 1, d) + 9 * 3600_000)
 
 // ✓ leave it to an established library
 const kst = zonedTimeToUtc(raw, "Asia/Seoul")
+```
+
+```text
+✗ the problem is rate limiting; invent a scheme of counters and sleeps on the spot
+✓ the problem is rate limiting; read how established implementations model it
+  (token bucket), then implement that model
 ```
 
 ### 7. Lean on the dependencies already in the project before writing your own implementation or adding packages
