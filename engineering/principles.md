@@ -39,22 +39,20 @@ await notifiers[config.channel].send(message)
 await sendSlack(message)
 ```
 
-### 3. Grow the system in layers
+### 3. Grow the system in layers - ship the smallest end-to-end version first; this orders the work, not the code
 
-Start from the smallest version that works end to end, and add each new capability on top of a
-product that already works. Never trade a working product for unfinished complexity.
-
-This one is about the order of the work, not the shape of the code.
+Add each new capability on top of a product that already works. Never trade a working product for
+unfinished complexity.
 
 ```text
 ✗ open list, detail, and checkout at once, and sit for weeks with none of them working
 ✓ finish list until it ships → add detail on top of it → add checkout on top of that
 ```
 
-### 4. Surface failures explicitly
+### 4. Surface failures explicitly - no default, empty value, or silent skip over an invalid state
 
-Do not cover an invalid state with a default, an empty value, or a silent skip. Raise at the point
-of failure. Add a fallback only when that behavior is itself a requirement, never to avoid an error.
+Raise at the point of failure. Add a fallback only when that behavior is itself a requirement,
+never to avoid an error.
 
 ```ts
 // ✗ covers the failure with an empty value
@@ -126,9 +124,7 @@ import { z } from "zod"
 ✓ extend formatDate to take the option both callers need
 ```
 
-### 8. Make architectural decisions for the long term
-
-Do not accept a stopgap that only works for now and is meant to be replaced later.
+### 8. Make architectural decisions for the long term - never a stopgap you already plan to replace
 
 ```ts
 // ✗ "keep it in memory for now, move it to a database later"
@@ -231,11 +227,10 @@ await db.insert(members).values(row)
 await db.insert(members).values(row).onConflictDoNothing()
 ```
 
-### 12. Price a test before writing it
+### 12. Price a test before writing it - assert what a caller observes, with the expected answer from outside the implementation
 
-Get the expected answer from outside the code, not from the implementation you just wrote. Assert what
-a caller observes, and mock only across boundaries you cannot change. A test that catches no plausible
-bug but breaks on every refactor is a liability.
+Mock only across boundaries you cannot change. A test that catches no plausible bug but breaks on
+every refactor is a liability.
 
 ```ts
 // ✗ asserts wiring, and mocks code you own
