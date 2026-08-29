@@ -7,9 +7,10 @@ Examples are written in TypeScript, but the principles are stack-independent. Ea
 
 ## Principles
 
-### 1. Do not preserve backward compatibility
+### 1. Delete what a change makes obsolete, in the same change - no compatibility layers, no dead paths left behind
 
-Remove obsolete paths instead of adding compatibility layers, fallbacks, or migrations.
+Remove obsolete paths instead of adding compatibility layers, fallbacks, or migrations. Code whose
+last caller this change removes goes with it.
 
 ```ts
 // ✗ keeps the old field alongside the new one
@@ -17,6 +18,11 @@ return { name: user.name, displayName: user.displayName }
 
 // ✓ update every consumer, then delete the old field
 return { displayName: user.displayName }
+```
+
+```text
+✗ the diff removes formatLegacyDate's last caller and leaves the function in the tree
+✓ the helper leaves in the same diff as its last caller
 ```
 
 ### 2. Choose the simplest implementation that fully meets the current requirements
@@ -101,9 +107,11 @@ const kst = zonedTimeToUtc(raw, "Asia/Seoul")
   (token bucket), then implement that model
 ```
 
-### 7. Lean on the dependencies already in the project before writing your own implementation or adding packages
+### 7. Lean on what the project already has - its own code and its dependencies - before writing a parallel implementation or adding packages
 
-Do not assume a library lacks a capability without checking its documentation and types.
+Do not assume a library lacks a capability without checking its documentation and types, and do not
+add a sibling of code that already exists: when an existing implementation almost fits, extend it
+for the callers that exist now (#2 bounds the generalization).
 
 ```ts
 // ✗ zod is already here, but "it probably can't do this" wins and a package is added
@@ -111,6 +119,11 @@ import Joi from "joi"
 
 // ✓ check the documentation and types of what is already there
 import { z } from "zod"
+```
+
+```text
+✗ formatDate exists; the diff adds formatDateWithTime beside it, 80% identical
+✓ extend formatDate to take the option both callers need
 ```
 
 ### 8. Make architectural decisions for the long term
